@@ -1,0 +1,33 @@
+# Description: [B0 -> (f_2 -> K+ K-) (K0S -> pi+ pi-)]
+#
+# Author: A. Gaz
+#
+# Date: 2015-02-24
+#
+Alias MyB0 B0
+Alias Myanti-B0 anti-B0
+ChargeConj MyB0 Myanti-B0
+Alias      MyF2  f_2
+ChargeConj MyF2  MyF2
+Alias      MyKs     K_S0
+ChargeConj MyKs     MyKs
+#
+#
+Decay Upsilon(4S)
+1.0     MyB0 Myanti-B0 B0 anti-B0	             	VSS_BMIX dm;
+Enddecay
+#
+Decay MyB0
+1.000    MyF2   MyKs     SSD_CP dm 0.0 1.0 minusTwoBeta 1.0 0. -1.0 0.;
+Enddecay
+CDecay Myanti-B0
+#
+Decay MyKs
+1.000        pi+       pi-                 PHSP;
+Enddecay
+#
+Decay MyF2
+1.000         K+       K-                   TSS;
+Enddecay
+#
+End
