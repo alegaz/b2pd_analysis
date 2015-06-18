@@ -19,7 +19,7 @@ from ROOT import Belle2
 import glob
 
 # generate signal MC
-generateY4S(100, Belle2.FileSystem.findFile('../dec_files/B0_phi-K+K-_KS-pi+pi-.dec'))
+generateY4S(1000, Belle2.FileSystem.findFile('../dec_files/B0_phi-K+K-_KS-pi+pi-.dec'))
 
 # simulation
 add_simulation(analysis_main, None, bkgfiles=glob.glob('/sw/belle2/bkg/*.root'))
