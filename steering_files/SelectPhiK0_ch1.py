@@ -19,70 +19,54 @@
 
 from basf2 import *
 from modularAnalysis import *
-from FlavorTagger import *
-
-# standard lists of particles
-from stdFSParticles import stdPi0
-from stdFSParticles import stdPhoton
-from stdLooseFSParticles import stdLoosePi
-from stdLooseFSParticles import stdVeryLoosePi
-from stdLooseFSParticles import stdLooseK
-from stdV0s import stdKshorts
 
 
 # set the input files
-import sys
-filelistSIG = ['../saved_rootfiles/B0_phi-KK_KS-pi+pi-_gsim-BKGx1-50000-*.root']
+filelistSIG = ['../../../../rel-00-05-00/analysis/b2pd_analysis/saved_rootfiles/B0_Phi-KK_Ks-pi+pi-_gsim-BKGx1-50000-1.root']
 
 # load input ROOT file
 inputMdstList(filelistSIG)
 
-# print contents of the DataStore before loading Particles
-printDataStore()
+photons   = ('gamma:all',   '')
+electrons = ('e-:all',      '')
+muons     = ('mu-:all',     '')
+pions     = ('pi-:all',     '')
+kaons     = ('K-:all',      '')
+protons   = ('anti-p-:all', '')
 
-# use the default functions for all other particles
-stdPhoton()
-stdPi0()
-stdLoosePi()
-stdVeryLoosePi()
-stdLooseK()
-stdKshorts()
+fillParticleLists([photons, electrons, muons, pions, kaons, protons])
 
-# print contents of the DataStore after loading Particles
-printDataStore()
 
 # start reconstructing the candidates
-# two lists of Kshorts can be defined (those from V0's are recommended)
 
-# Ks from V0's
-fillParticleList('K_S0:all', '0.3 < M < 0.7', True)
-vertexKFit('K_S0:all', 0.0)
+fillParticleList('K_S0:mdst','0.3 < M < 0.7')
+vertexKFit('K_S0:mdst', 0.0)
+applyCuts('K_S0:mdst','0.475 < M < 0.520')
+matchMCTruth('K_S0:mdst')
 
-# Ks -> pi+pi-
-reconstructDecay('K_S0:chg -> pi+:loose pi-:loose', '0.4 < M < 0.6')
-vertexKFit('K_S0:chg', 0.0)
+cutAndCopyList('gamma:good','gamma:all','0.060 < E < 6.000 and -150 < clusterTiming < 0 and clusterE9E25 > 0.75')
+calibratePhotonEnergy('gamma:good', 0.0064)
 
-# phi -> K+K-
-reconstructDecay('phi:KK -> K+:loose K-:loose', '0.1 < M < 4.1')
-vertexKFit('phi:KK', 0.0)
+reconstructDecay('pi0:all -> gamma:good gamma:good',' 0.080 < M < 0.200')
+massKFit('pi0:all',0.0)
+matchMCTruth('pi0:all')
 
+reconstructDecay('phi:all -> K-:all K+:all','M < 1.1')
+vertexKFit('phi:all', 0.0)
+matchMCTruth('phi:all')
 
-# ch1: B -> phi[KK] Ks[pi+pi-]
-#reconstructDecay('B0:ch1 -> phi:KK K_S0:chg', '5.0 < M < 5.5')
-reconstructDecay('B0:ch1 -> phi:KK K_S0:all', '4.5 < M < 5.5')
+reconstructDecay('B0:ch1 -> phi:all K_S0:mdst','Mbc > 5.2 and abs(deltaE) < 0.2')
 vertexRave('B0:ch1', 0.0, 'B0:ch1 -> [phi -> ^K+ ^K-] K_S0')
+matchMCTruth('B0:ch1')
 
 # get the rest of the event:
 buildRestOfEvent('B0:ch1')
-
-# perform MC truth matching
-matchMCTruth('B0:ch1')
 
 # get tag vertex ('breco' is the type of MC association)
 TagV('B0:ch1', 'breco')
 
 # get continuum suppression (needed for flavor tagging)
-#buildContinuumSuppression('B0:ch1')
+buildContinuumSuppression('B0:ch1')
 
 # flavor tagging
 #FlavorTagger(
@@ -124,6 +108,13 @@ toolsKsChg += ['EventMetaData', '^K_S0']
 toolsPhiKK = ['InvMass', '^phi -> K+ K-']
 toolsPhiKK += ['Vertex', '^phi -> K+ K-']
 toolsPhiKK += ['EventMetaData', '^phi']
+toolsPhiKK += ['Kinematics',               '^phi -> ^K- ^K+']
+toolsPhiKK += ['MCTruth',                  '^phi']
+toolsPhiKK += ['Vertex',                   '^phi']
+toolsPhiKK += ['MCReconstructible',        'phi -> ^K- ^K+']
+toolsPhiKK += ['DeltaLogL',                'phi -> ^K- ^K+']
+toolsPhiKK += ['Track',                    'phi -> ^K- ^K+']
+toolsPhiKK += ['CustomFloats[isSignal:M]', '^phi']
 
 toolsBsigCh1 = ['EventMetaData', '^B0:ch1']
 toolsBsigCh1 += ['InvMass', '^B0:ch1 -> [^phi -> K+ K-] ^K_S0:all']
@@ -143,19 +134,20 @@ toolsBsigCh1 += ['TagVertex', '^B0:ch1']
 toolsBsigCh1 += ['MCTagVertex', '^B0:ch1']
 toolsBsigCh1 += ['DeltaT', '^B0:ch1']
 toolsBsigCh1 += ['MCDeltaT', '^B0:ch1']
+toolsBsigCh1 += ['CustomFloats[isSignal]', '^B0:ch1']
 #toolsBsigCh1 += ['FlavorTagging', '^B0:ch1']
 
 toolsRS = ['RecoStats', '^B0:ch1']
 
 
 # save stuff to root file
-ntupleFile('B0_Phi-KK_K0-pi+pi-.root')
+ntupleFile('reco_test2.root')
 
 ntupleTree('Trks', 'pi+:all', toolsTrk)
 ntupleTree('Neu', 'gamma:all', toolsNeu)
 ntupleTree('Pi0', 'pi0:all', toolsPi0)
-ntupleTree('KsChg', 'K_S0:chg', toolsKsChg)
-ntupleTree('PhiKK', 'phi:KK', toolsPhiKK)
+ntupleTree('KsChg', 'K_S0:mdst', toolsKsChg)
+ntupleTree('PhiKK', 'phi:all', toolsPhiKK)
 ntupleTree('B0_ch1', 'B0:ch1', toolsBsigCh1)
 ntupleTree('RecoStats', 'B0:ch1', toolsRS)
 
