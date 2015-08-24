@@ -34,9 +34,10 @@ outFile = ''
 
 # set the input files
 
-filelistSIG = ['../saved_rootfiles/B0_phi-pi+pi-pi0_KS-pi+pi-_gsim-BKGx1-50000-1.root']
+filelistSIG = ['../saved_rootfiles/B0_phi-pi+pi-pi0_KS-pi+pi-_gsim-BKGx1-50000-*.root']
+#filelistSIG = ['B0_phi-pi+pi-pi0_KS-pi+pi-_gsim-BKGx1-50000.root']
 filelistBBbar = ['../saved_rootfiles/reconstructedBBbar-10M.root']
-filelistCC = ['../saved_rootfiles/reconstructedContinuum-10M.root']
+filelistCC = ['../saved_rootfiles/reconstructedContinuum_ch3_1M_*.root']
 
 
 # define input and output files
@@ -185,7 +186,7 @@ if action == 'expert':
     #transformedNetworkOutputNB = \
     #    ['transformedNetworkOutput(NeuroBayes_Probability,-0.9,1.0)']
     transformedNetworkOutputFBDT = \
-                                 ['transformedNetworkOutput(FastBDT_Probability,0.1,1.0)']
+                                 ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
 
 
 

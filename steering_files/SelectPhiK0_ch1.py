@@ -34,10 +34,10 @@ outFile = ''
 
 # set the input files
 
-filelistSIG = ['../saved_rootfiles/B0_Phi-KK_Ks-pi+pi-_gsim-BKGx1-50000-1.root']
+filelistSIG = ['../saved_rootfiles/B0_Phi-KK_Ks-pi+pi-_gsim-BKGx1-50000-*.root']
 #filelistCC = ['../saved_rootfiles/continuum_gsim-BKGx1-50000-1.root']
 filelistBBbar = ['../saved_rootfiles/reconstructedBBbar-10M.root']
-filelistCC = ['../saved_rootfiles/reconstructedContinuum-10M.root']
+filelistCC = ['../saved_rootfiles/reconstructedContinuum_ch1-10M.root']
 
 
 # define input and output files
@@ -186,7 +186,7 @@ if action == 'expert':
     #transformedNetworkOutputNB = \
     #    ['transformedNetworkOutput(NeuroBayes_Probability,-0.9,1.0)']
     transformedNetworkOutputFBDT = \
-                                 ['transformedNetworkOutput(FastBDT_Probability,0.1,1.0)']
+                                 ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
 
 
 
@@ -212,6 +212,8 @@ toolsTrk += ['MCKinematics', '^pi+:all']
 toolsTrk += ['MCTruth','^pi+:all']
 toolsTrk += ['MCHierarchy', '^pi+:all']
 toolsTrk += ['CustomFloats[isContinuumEvent]', '^pi+:all']
+toolsTrk += ['PID', '^pi+:all']
+toolsTrk += ['Track', '^pi+:all']
 
 toolsNeu = ['EventMetaData', 'gamma:all']
 toolsNeu += ['Kinematics', '^gamma:all']
