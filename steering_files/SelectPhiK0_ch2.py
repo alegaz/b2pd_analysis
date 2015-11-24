@@ -34,8 +34,9 @@ outFile = ''
 
 # set the input files
 
-filelistSIG = ['../saved_rootfiles/B0_Phi-KK_Ks-pi0pi0_gsim-BKGx1-50000-*.root']
-filelistCC = ['../saved_rootfiles/reconstructedContinuum_ch2_10M.root']
+#filelistSIG = ['../saved_rootfiles/B0_Phi-KK_Ks-pi0pi0_gsim-BKGx1-50000-1.root']
+filelistSIG = ['test_signal_ch2_v9.root']
+filelistCC = ['/ghi/fs01/belle2/bdata/MC/fab/sim/release-00-05-03/DBxxxxxxxx/MC5/prod00000005/s00/e0001/4S/r00001/ssbar/sub00/mdst_00001*_prod00000005_task0000001*.root']
 filelistBBbar = ['../saved_rootfiles/reconstructedBBbar-10M.root']
 
 
@@ -151,8 +152,8 @@ if action == 'training':
         ]
 
     # Define the methods.
-    methods = [('FastBDT', 'Plugin',
-                'H:V:CreateMVAPdfs:NTrees=100:Shrinkage=0.10:RandRatio=0.5:NCutLevel=8:NTreeLayers=3')]
+    methods = [('LPCA', 'Likelihood',
+                'H:V:!TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmooth=5:NAvEvtPerBin=50:VarTransform=PCA')]
 
     # TMVA training/testing
     teacher = register_module('TMVATeacher')
@@ -167,7 +168,7 @@ if action == 'training':
 
 if action == 'expert':
     # run the expert mode
-    methods = ['FastBDT']
+    methods = ['LPCA']
 
     for method in methods:
         expert = register_module('TMVAExpert')
@@ -181,10 +182,12 @@ if action == 'expert':
     # Network output
     networkOutput = ['extraInfo({method}_Probability)'.format(method=method)
                      for method in methods]
+    transformedNetworkOutputLPCA = \
+        ['transformedNetworkOutput(LPCA_Probability,0.,1.0)']
     #transformedNetworkOutputNB = \
     #    ['transformedNetworkOutput(NeuroBayes_Probability,-0.9,1.0)']
-    transformedNetworkOutputFBDT = \
-                                 ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
+    #transformedNetworkOutputFBDT = \
+    #                             ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
 
 
 
@@ -264,7 +267,7 @@ if action == 'expert':
     toolsBsigCh2 += ['ContinuumSuppression', '^B0:ch2']
     toolsBsigCh2 += ['ContinuumSuppression[FS1]', '^B0:ch2']
     toolsBsigCh2 += ['CustomFloats[' + ':'.join(networkOutput) + ']', '^B0:ch2']
-    toolsBsigCh2 += ['CustomFloats[' + ':'.join(transformedNetworkOutputFBDT) + ']', '^B0:ch2']
+    toolsBsigCh2 += ['CustomFloats[' + ':'.join(transformedNetworkOutputLPCA) + ']', '^B0:ch2']
     #toolsBsigCh2 += ['CustomFloats[' + ':'.join(transformedNetworkOutputNB) + ']', '^B0:ch2']
 
 #toolsBsigCh2 += ['FlavorTagging', '^B0:ch2']
@@ -275,11 +278,11 @@ toolsRS = ['RecoStats', '^B0:ch2']
 # save stuff to root file
 ntupleFile(outFile)
 
-ntupleTree('Trks', 'pi+:all', toolsTrk)
-ntupleTree('Neu', 'gamma:all', toolsNeu)
-ntupleTree('Pi0', 'pi0:all', toolsPi0)
-ntupleTree('KsNeu', 'K_S0:neu', toolsKsNeu)
-ntupleTree('PhiKK', 'phi:all', toolsPhiKK)
+#ntupleTree('Trks', 'pi+:all', toolsTrk)
+#ntupleTree('Neu', 'gamma:all', toolsNeu)
+#ntupleTree('Pi0', 'pi0:all', toolsPi0)
+#ntupleTree('KsNeu', 'K_S0:neu', toolsKsNeu)
+#ntupleTree('PhiKK', 'phi:all', toolsPhiKK)
 ntupleTree('B0_ch2', 'B0:ch2', toolsBsigCh2)
 ntupleTree('RecoStats', 'B0:ch2', toolsRS)
 

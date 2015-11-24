@@ -34,10 +34,11 @@ outFile = ''
 
 # set the input files
 
-filelistSIG = ['../saved_rootfiles/B0_phi-pi+pi-pi0_KS-pi+pi-_gsim-BKGx1-50000-*.root']
+#filelistSIG = ['../saved_rootfiles/B0_phi-pi+pi-pi0_KS-pi+pi-_gsim-BKGx1-50000-1.root']
+filelistSIG = ['test_signal_ch3_v9.root']
 #filelistSIG = ['B0_phi-pi+pi-pi0_KS-pi+pi-_gsim-BKGx1-50000.root']
 filelistBBbar = ['../saved_rootfiles/reconstructedBBbar-10M.root']
-filelistCC = ['../saved_rootfiles/reconstructedContinuum_ch3_1M_*.root']
+filelistCC = ['/ghi/fs01/belle2/bdata/MC/fab/sim/release-00-05-03/DBxxxxxxxx/MC5/prod00000005/s00/e0001/4S/r00001/ssbar/sub00/mdst_00001*_prod00000005_task0000001*.root']
 
 
 # define input and output files
@@ -153,8 +154,8 @@ if action == 'training':
         ]
 
     # Define the methods.
-    methods = [('FastBDT', 'Plugin',
-                'H:V:CreateMVAPdfs:NTrees=100:Shrinkage=0.10:RandRatio=0.5:NCutLevel=8:NTreeLayers=3')]
+    methods = [('LPCA', 'Likelihood',
+                'H:V:!TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmooth=5:NAvEvtPerBin=50:VarTransform=PCA')]
 
     # TMVA training/testing
     teacher = register_module('TMVATeacher')
@@ -169,7 +170,7 @@ if action == 'training':
 
 if action == 'expert':
     # run the expert mode
-    methods = ['FastBDT']
+    methods = ['LPCA']
 
     for method in methods:
         expert = register_module('TMVAExpert')
@@ -185,10 +186,10 @@ if action == 'expert':
                      for method in methods]
     #transformedNetworkOutputNB = \
     #    ['transformedNetworkOutput(NeuroBayes_Probability,-0.9,1.0)']
-    transformedNetworkOutputFBDT = \
-                                 ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
-
-
+    #transformedNetworkOutputFBDT = \
+    #                            ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
+    transformedNetworkOutputLPCA = \
+        ['transformedNetworkOutput(LPCA_Probability,0.,1.0)']
 
 
 
@@ -276,11 +277,11 @@ toolsRS = ['RecoStats', '^B0:ch3']
 # save stuff to root file
 ntupleFile(outFile)
 
-ntupleTree('Trks', 'pi+:all', toolsTrk)
-ntupleTree('Neu', 'gamma:all', toolsNeu)
-ntupleTree('Pi0', 'pi0:all', toolsPi0)
-ntupleTree('KsChg', 'K_S0:mdst', toolsKsChg)
-ntupleTree('Phi3Pi', 'phi:all', toolsPhi3Pi)
+#ntupleTree('Trks', 'pi+:all', toolsTrk)
+#ntupleTree('Neu', 'gamma:all', toolsNeu)
+#ntupleTree('Pi0', 'pi0:all', toolsPi0)
+#ntupleTree('KsChg', 'K_S0:mdst', toolsKsChg)
+#ntupleTree('Phi3Pi', 'phi:all', toolsPhi3Pi)
 ntupleTree('B0_ch3', 'B0:ch3', toolsBsigCh3)
 ntupleTree('RecoStats', 'B0:ch3', toolsRS)
 
