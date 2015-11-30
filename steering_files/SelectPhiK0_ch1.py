@@ -70,7 +70,7 @@ else:
             outFile = 'B0_PhiK0_ch1_output_cs_continuum.root'
         
     else:
-        sys.exit('Input sample does not match any of the availible samples: `signal`, `BBBar` or `continuum`.'
+        sys.exit('Input sample does not match any of the availible samples: `signal`, `BBbar` or `continuum`.'
                  )
 
 
