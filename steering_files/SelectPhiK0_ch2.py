@@ -19,8 +19,8 @@
 
 import sys
 
-if len(sys.argv) != 3:
-    sys.exit('\n Usage: basf2 SelectPhiK0_ch2.py `action` `sample`.\n\n Where `action` = `simple`, `train`, or `expert`\n and `sample` = `signal`, `BBbar` or `continuum`\n'
+if len(sys.argv) != 5:
+    sys.exit('\n Usage: basf2 SelectPhiK0_ch1.py `action` `sample` `file_name_stub` `output file name`.\n\n Where `action` = `simple`, `training`, or `expert`\n and `sample` = `signal`, `BBbar` or `continuum`\n'
     )
 
 from basf2 import *
@@ -29,48 +29,41 @@ from modularAnalysis import *
 
 action = str(sys.argv[1])
 sample = str(sys.argv[2])
-outFile = ''
+stub   = str(sys.argv[3])
+outFile = str(sys.argv[4])
 
 
 # set the input files
 
-#filelistSIG = ['../saved_rootfiles/B0_Phi-KK_Ks-pi0pi0_gsim-BKGx1-50000-1.root']
-filelistSIG = ['test_signal_ch2_v9.root']
-filelistCC = ['/ghi/fs01/belle2/bdata/MC/fab/sim/release-00-05-03/DBxxxxxxxx/MC5/prod00000005/s00/e0001/4S/r00001/ssbar/sub00/mdst_00001*_prod00000005_task0000001*.root']
-filelistBBbar = ['../saved_rootfiles/reconstructedBBbar-10M.root']
+filenameSIG = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/SignalMC/Ch2/"
+filenameSIG += stub
+filenameSIG += "*.root"
+filelistSIG = [filenameSIG];
 
+filenameCC = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/GenericMC/continuum/"
+filenameCC += stub
+filenameCC += "*.root"
+filelistCC = [filenameCC];
 
-# define input and output files
-
-outFile = 'B0_PhiK0_ch2_output.root'
+filenameBBbar = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/GenericMC/BBbar/"
+filenameBBbar += stub
+filenameBBbar += "*.root"
+filelistBBbar = [filenameBBbar];
 
 if action == 'training':
     inputMdstList(filelistSIG+filelistCC)
-
 else:
     if sample == 'signal':
         inputMdstList(filelistSIG)
-        if action == 'simple':
-            outFile = 'B0_PhiK0_ch2_output_signal.root'
-        elif action == 'expert':
-            outFile = 'B0_PhiK0_ch2_output_cs_signal.root'
             
     elif sample == 'BBbar':
-        inputMdstList(filelistCC)
-        if action == 'simple':
-            outFile = 'B0_PhiK0_ch2_output_BBbar.root'
-        elif action == 'expert':
-            outFile = 'B0_PhiK0_ch2_output_cs_BBbar.root'
+        inputMdstList(filelistBBbar)
             
     elif sample == 'continuum':
         inputMdstList(filelistCC)
-        if action == 'simple':
-            outFile = 'B0_PhiK0_ch2_output_continuum.root'
-        elif action == 'expert':
-            outFile = 'B0_PhiK0_ch2_output_cs_continuum.root'
         
     else:
-        sys.exit('Input sample does not match any of the availible samples: `signal`, `BBbar` or `continuum`.'
+        sys.exit('Input sample does not match any of the availible samples: `signal`, `BBBar` or `continuum`.'
                  )
 
 
@@ -120,7 +113,7 @@ if action == 'training':
     # Define the input variables.
     variables = [
         'R2',
-        'cosTBTO',
+        #'cosTBTO',
         'KSFWVariables(hso02)',
         'KSFWVariables(hso12)',
         'cosTBz',
@@ -152,8 +145,7 @@ if action == 'training':
         ]
 
     # Define the methods.
-    methods = [('LPCA', 'Likelihood',
-                'H:V:!TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmooth=5:NAvEvtPerBin=50:VarTransform=PCA')]
+    methods = [('FastBDT', 'Plugin', 'H:V:CreateMVAPdfs:NTrees=100:Shrinkage=0.10:RandRatio=0.5:NCutLevel=8:NTreeLayers=3')]
 
     # TMVA training/testing
     teacher = register_module('TMVATeacher')
@@ -168,7 +160,7 @@ if action == 'training':
 
 if action == 'expert':
     # run the expert mode
-    methods = ['LPCA']
+    methods = ['FastBDT']
 
     for method in methods:
         expert = register_module('TMVAExpert')
@@ -182,12 +174,12 @@ if action == 'expert':
     # Network output
     networkOutput = ['extraInfo({method}_Probability)'.format(method=method)
                      for method in methods]
-    transformedNetworkOutputLPCA = \
-        ['transformedNetworkOutput(LPCA_Probability,0.,1.0)']
+    #transformedNetworkOutputLPCA = \
+    #    ['transformedNetworkOutput(LPCA_Probability,0.,1.0)']
     #transformedNetworkOutputNB = \
     #    ['transformedNetworkOutput(NeuroBayes_Probability,-0.9,1.0)']
-    #transformedNetworkOutputFBDT = \
-    #                             ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
+    transformedNetworkOutputFBDT = \
+                                 ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
 
 
 
@@ -262,12 +254,14 @@ toolsBsigCh2 += ['MCTagVertex', '^B0:ch2']
 toolsBsigCh2 += ['DeltaT', '^B0:ch2']
 toolsBsigCh2 += ['MCDeltaT', '^B0:ch2']
 toolsBsigCh2 += ['CustomFloats[isSignal:isContinuumEvent]', '^B0:ch2']
+toolsBsigCh2 += ['ContinuumSuppression', '^B0:ch2']
+toolsBsigCh2 += ['ContinuumSuppression[FS1]', '^B0:ch2']
+
 
 if action == 'expert':
-    toolsBsigCh2 += ['ContinuumSuppression', '^B0:ch2']
-    toolsBsigCh2 += ['ContinuumSuppression[FS1]', '^B0:ch2']
     toolsBsigCh2 += ['CustomFloats[' + ':'.join(networkOutput) + ']', '^B0:ch2']
-    toolsBsigCh2 += ['CustomFloats[' + ':'.join(transformedNetworkOutputLPCA) + ']', '^B0:ch2']
+    #toolsBsigCh2 += ['CustomFloats[' + ':'.join(transformedNetworkOutputLPCA) + ']', '^B0:ch2']
+    toolsBsigCh2 += ['CustomFloats[' + ':'.join(transformedNetworkOutputFBDT) + ']', '^B0:ch2']
     #toolsBsigCh2 += ['CustomFloats[' + ':'.join(transformedNetworkOutputNB) + ']', '^B0:ch2']
 
 #toolsBsigCh2 += ['FlavorTagging', '^B0:ch2']
