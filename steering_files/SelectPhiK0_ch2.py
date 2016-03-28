@@ -284,4 +284,4 @@ ntupleTree('RecoStats', 'B0:ch2', toolsRS)
 process(analysis_main)
 
 # print out the summary
-print statistics
+print (statistics)
