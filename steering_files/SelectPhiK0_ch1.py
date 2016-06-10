@@ -23,9 +23,10 @@ if len(sys.argv) != 5:
     sys.exit('\n Usage: basf2 SelectPhiK0_ch1.py `action` `sample` `file_name_stub` `output file name`.\n\n Where `action` = `simple`, `training`, or `expert`\n and `sample` = `signal`, `BBbar` or `continuum`\n'
     )
 
+import os
 from basf2 import *
 from modularAnalysis import *
-
+from variables import variables
 
 action = str(sys.argv[1])
 sample = str(sys.argv[2])
@@ -35,7 +36,7 @@ outFile = str(sys.argv[4])
 
 # set the input files
 
-filenameSIG = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/SignalMC/Ch1/"
+filenameSIG = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/SignalMC/Ch1/private/"
 filenameSIG += stub
 filenameSIG += "*.root"
 filelistSIG = [filenameSIG];
@@ -50,8 +51,11 @@ filenameBBbar += stub
 filenameBBbar += "*.root"
 filelistBBbar = [filenameBBbar];
 
+filenameTrain = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/TrainingSet/Ch1/*.root"
+filelistTrain = [filenameTrain];
+
 if action == 'training':
-    inputMdstList(filelistSIG+filelistCC)
+    inputMdstList(filelistTrain)
 else:
     if sample == 'signal':
         inputMdstList(filelistSIG)
@@ -96,7 +100,7 @@ vertexKFit('phi:all', 0.0)
 matchMCTruth('phi:all')
 
 reconstructDecay('B0:ch1 -> phi:all K_S0:mdst','Mbc > 5.2 and abs(deltaE) < 0.2')
-vertexRave('B0:ch1', 0.0, 'B0:ch1 -> [phi -> ^K+ ^K-] K_S0')
+vertexRave('B0:ch1', 0.0, 'B0:ch1 -> [phi -> ^K+ ^K-] ^K_S0', 'iptube')
 matchMCTruth('B0:ch1')
 
 # get the rest of the event:
@@ -114,7 +118,7 @@ if action == 'training':
     # Define the input variables.
     variables = [
         'R2',
-        #'cosTBTO',
+        'cosTBTO',
         'KSFWVariables(hso02)',
         'KSFWVariables(hso12)',
         'cosTBz',
@@ -143,27 +147,42 @@ if action == 'training':
         'CleoCone(6)',
         'CleoCone(7)',
         'CleoCone(8)',
+        'cosThetaB',
         ]
 
 
-    # Define the methods.
-    methods = [('FastBDT', 'Plugin', 'H:V:CreateMVAPdfs:NTrees=100:Shrinkage=0.10:RandRatio=0.5:NCutLevel=8:NTreeLayers=3')]
- 
+    # Define the methods
+    methods = [
+        ('FastBDT', 'Plugin', 'H:V:CreateMVAPdfs:NbinsMVAPdf=100:NTrees=100:Shrinkage=0.10:RandRatio=0.5:NCutLevel=8:NTreeLayers=3'),
+        ('BDT', 'Plugin', 'H:V:CreateMVAPdfs:NTrees=500'),
+        ('HMatrix', 'Plugin', 'H:V:CreateMVAPdfs'),
+        ('Fisher', 'Plugin', 'H:V:CreateMVAPdfs'),
+        ('LD', 'Plugin', 'H:V:CreateMVAPdfs'),
+        ('Likelihood', 'Plugin', 'H:V:CreateMVAPdfs'),
+        ]
+
+
+    # Create directory for TMVA teacher output
+    outDirForTMVA = 'training_ch1'
+    if not os.path.exists(outDirForTMVA):
+        os.makedirs(outDirForTMVA)
+
 
     # TMVA training/testing
-    teacher = register_module('TMVATeacher')
+    teacher = register_module('TMVAOnTheFlyTeacher')
     teacher.param('prefix', 'B0_PhiKs_ch1_TMVA')
     teacher.param('methods', methods)
     teacher.param('variables', variables)
-    teacher.param('target', 'isContinuumEvent')
+    teacher.param('target', 'isNotContinuumEvent')
     teacher.param('listNames', ['B0:ch1'])
-    teacher.param('workingDirectory', 'training')
+    teacher.param('workingDirectory', outDirForTMVA)
     analysis_main.add_module(teacher)
+
 
 
 if action == 'expert':
     # run the expert mode
-    methods = ['FastBDT']
+    methods = ['FastBDT','BDT','HMatrix','Fisher','LD','Likelihood']
 
     for method in methods:
         expert = register_module('TMVAExpert')
@@ -171,20 +190,34 @@ if action == 'expert':
         expert.param('method', method)
         expert.param('listNames', ['B0:ch1'])
         expert.param('expertOutputName', method + '_Probability')
-        expert.param('workingDirectory', 'training')
+        expert.param('workingDirectory', 'training_ch1')
         analysis_main.add_module(expert)
 
     # Network output
     networkOutput = ['extraInfo({method}_Probability)'.format(method=method)
                      for method in methods]
-    #transformedNetworkOutputLPCA = \
-    #    ['transformedNetworkOutput(LPCA_Probability,0.,1.0)']
-    #transformedNetworkOutputNB = \
-    #    ['transformedNetworkOutput(NeuroBayes_Probability,-0.9,1.0)']
     transformedNetworkOutputFBDT = \
-                                 ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
+        ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
+    transformedNetworkOutputBDT = \
+        ['transformedNetworkOutput(BDT_Probability,0.0,1.0)']
+    transformedNetworkOutputHMatrix = \
+        ['transformedNetworkOutput(HMatrix_Probability,0.0,1.0)']
+    transformedNetworkOutputFisher = \
+        ['transformedNetworkOutput(Fisher_Probability,0.0,1.0)']
+    transformedNetworkOutputLD = \
+        ['transformedNetworkOutput(LD_Probability,0.0,1.0)']
+    transformedNetworkOutputLikelihood = \
+        ['transformedNetworkOutput(Likelihood_Probability,0.0,1.0)']
 
 
+    # define human readable aliases for CS variables
+
+    variables.addAlias('csv_FastBDT', 'transformedNetworkOutput(FastBDT_Probability,0.0,1.0)')
+    variables.addAlias('csv_BDT', 'transformedNetworkOutput(BDT_Probability,0.0,1.0)')
+    variables.addAlias('csv_HMatrix', 'transformedNetworkOutput(HMatrix_Probability,0.0,1.0)')
+    variables.addAlias('csv_Fisher', 'transformedNetworkOutput(Fisher_Probability,0.0,1.0)')
+    variables.addAlias('csv_LD', 'transformedNetworkOutput(LD_Probability,0.0,1.0)')
+    variables.addAlias('csv_Likelihood', 'transformedNetworkOutput(Likelihood_Probability,0.0,1.0)')
 
 
 
@@ -193,6 +226,13 @@ if action == 'expert':
 #    mode='Expert',
 #    weightFiles='B2JpsiKs_mu',
 #    categories=['Electron', 'Muon', 'KinLepton', 'Kaon', 'SlowPion', 'FastPion', 'Lambda', 'FSC', 'MaximumP*', 'KaonPion'])
+
+
+# variable aliases
+
+variables.addAlias('flLenSig', 'significanceOfDistance')
+
+
 
 # define Ntuple tools 
 
@@ -258,14 +298,23 @@ toolsBsigCh1 += ['MCTagVertex', '^B0:ch1']
 toolsBsigCh1 += ['DeltaT', '^B0:ch1']
 toolsBsigCh1 += ['MCDeltaT', '^B0:ch1']
 toolsBsigCh1 += ['CustomFloats[isSignal:isContinuumEvent]', '^B0:ch1']
+toolsBsigCh1 += ['CustomFloats[flLenSig]', 'B0:ch1 -> phi ^K_S0']
+toolsBsigCh1 += ['CustomFloats[cThetaB]', '^B0:ch1']
 toolsBsigCh1 += ['ContinuumSuppression', '^B0:ch1']
 toolsBsigCh1 += ['ContinuumSuppression[FS1]', '^B0:ch1']
 
+
 if action == 'expert':
     toolsBsigCh1 += ['CustomFloats[' + ':'.join(networkOutput) + ']', '^B0:ch1']
-    toolsBsigCh1 += ['CustomFloats[' + ':'.join(transformedNetworkOutputFBDT) + ']', '^B0:ch1']
-    #toolsBsigCh1 += ['CustomFloats[' + ':'.join(transformedNetworkOutputNB) + ']', '^B0:ch1']
-    #toolsBsigCh1 += ['CustomFloats[' + ':'.join(transformedNetworkOutputLPCA) + ']', '^B0:ch1']
+    # human readable variables
+    toolsBsigCh1 += ['CustomFloats[csv_FastBDT]', '^B0:ch1']
+    toolsBsigCh1 += ['CustomFloats[csv_BDT]', '^B0:ch1']
+    toolsBsigCh1 += ['CustomFloats[csv_HMatrix]', '^B0:ch1']
+    toolsBsigCh1 += ['CustomFloats[csv_Fisher]', '^B0:ch1']
+    toolsBsigCh1 += ['CustomFloats[csv_LD]', '^B0:ch1']
+    toolsBsigCh1 += ['CustomFloats[csv_Likelihood]', '^B0:ch1']
+
+
 
 #toolsBsigCh1 += ['FlavorTagging', '^B0:ch1']
 
@@ -287,4 +336,4 @@ ntupleTree('RecoStats', 'B0:ch1', toolsRS)
 process(analysis_main)
 
 # print out the summary
-print (statistics)
+print(statistics)
