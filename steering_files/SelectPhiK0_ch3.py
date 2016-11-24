@@ -26,7 +26,6 @@ if len(sys.argv) != 5:
 import os
 from basf2 import *
 from modularAnalysis import *
-from variables import variables
 
 action = str(sys.argv[1])
 sample = str(sys.argv[2])
@@ -56,16 +55,16 @@ filelistTrain = [filenameTrain];
 
 
 if action == 'training':
-    inputMdstList(filelistTrain)
+    inputMdstList('MC5', filelistTrain)
 else:
     if sample == 'signal':
-        inputMdstList(filelistSIG)
+        inputMdstList('MC5', filelistSIG)
             
     elif sample == 'BBbar':
-        inputMdstList(filelistBBbar)
+        inputMdstList('MC5', filelistBBbar)
             
     elif sample == 'continuum':
-        inputMdstList(filelistCC)
+        inputMdstList('MC5', filelistCC)
         
     else:
         sys.exit('Input sample does not match any of the availible samples: `signal`, `BBBar` or `continuum`.'
@@ -112,6 +111,14 @@ TagV('B0:ch3', 'breco')
 
 # get continuum suppression (needed for flavor tagging)
 buildContinuumSuppression('B0:ch3')
+
+
+# variable aliases
+
+from variables import variables
+
+variables.addAlias('flLenSig', 'significanceOfDistance')
+
 
 
 if action == 'training':
@@ -227,10 +234,6 @@ if action == 'expert':
 #    categories=['Electron', 'Muon', 'KinLepton', 'Kaon', 'SlowPion', 'FastPion', 'Lambda', 'FSC', 'MaximumP*', 'KaonPion'])
 
 
-# variable aliases
-
-variables.addAlias('flLenSig', 'significanceOfDistance')
-
 
 
 # define Ntuple tools 
@@ -297,7 +300,8 @@ toolsBsigCh3 += ['DeltaT', '^B0:ch3']
 toolsBsigCh3 += ['MCDeltaT', '^B0:ch3']
 toolsBsigCh3 += ['CustomFloats[isSignal:isContinuumEvent]', '^B0:ch3']
 toolsBsigCh3 += ['CustomFloats[flLenSig]', 'B0:ch3 -> phi ^K_S0']
-toolsBsigCh3 += ['CustomFloats[cThetaB]', '^B0:ch3']
+toolsBsigCh3 += ['CustomFloats[CThetaB]', '^B0:ch3']
+toolsBsigCh3 += ['CustomFloats[CThHelVto3P]', 'B0:ch3 -> ^phi K_S0']
 toolsBsigCh3 += ['ContinuumSuppression', '^B0:ch3']
 toolsBsigCh3 += ['ContinuumSuppression[FS1]', '^B0:ch3']
 

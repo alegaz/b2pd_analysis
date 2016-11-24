@@ -3,16 +3,6 @@
 
 ######################################################
 #
-# Get started with B0 -> phi K0
-#
-# These are the channels that are going to be 
-# investigated:
-#
-# 1: phi[KK] KS[pi+pi-]
-# 2: phi[KK] KS[pi0pi0]
-# 3: phi[pi+pi-pi0] KS[pi+pi-]
-# 4: phi[KK] KL
-#
 # Author: A. Gaz
 #
 ######################################################
@@ -20,7 +10,7 @@
 import sys
 
 if len(sys.argv) != 5:
-    sys.exit('\n Usage: basf2 SelectPhiK0_ch1.py `action` `sample` `file_name_stub` `output file name`.\n\n Where `action` = `simple`, `training`, or `expert`\n and `sample` = `signal`, `BBbar` or `continuum`\n'
+    sys.exit('\n Usage: basf2 SelectPhiK0_ch1.py `action` `sample` `file_name_stub` `output file name`.\n\n Where `action` = `simple`, or `expert`\n and `sample` = `signal`, `BBbar` or `continuum`\n'
     )
 
 import os
@@ -50,24 +40,19 @@ filenameBBbar += stub
 filenameBBbar += "*.root"
 filelistBBbar = [filenameBBbar];
 
-filenameTrain = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/TrainingSet/Ch1/*.root"
-filelistTrain = [filenameTrain];
 
-if action == 'training':
-    inputMdstList('MC5', filelistTrain)
-else:
-    if sample == 'signal':
-        inputMdstList('MC5', filelistSIG)
+if sample == 'signal':
+    inputMdstList('MC5', filelistSIG)
             
-    elif sample == 'BBbar':
-        inputMdstList('MC5', filelistBBbar)
+elif sample == 'BBbar':
+    inputMdstList('MC5', filelistBBbar)
             
-    elif sample == 'continuum':
-        inputMdstList('MC5', filelistCC)
+elif sample == 'continuum':
+    inputMdstList('MC5', filelistCC)
         
-    else:
-        sys.exit('Input sample does not match any of the availible samples: `signal`, `BBBar` or `continuum`.'
-                 )
+else:
+    sys.exit('Input sample does not match any of the availible samples: `signal`, `BBBar` or `continuum`.'
+             )
 
 
 photons   = ('gamma:all',   '')
@@ -112,10 +97,10 @@ TagV('B0:ch1', 'breco')
 buildContinuumSuppression('B0:ch1')
 
 
-if action == 'training':
+if action == 'expert':
 
-    # Define the input variables.
-    cvars = [
+    # Variables for training.
+    trainVars = [
         'R2',
         'cosTBTO',
         'KSFWVariables(hso02)',
@@ -146,77 +131,17 @@ if action == 'training':
         'CleoCone(6)',
         'CleoCone(7)',
         'CleoCone(8)',
-        'cosThetaB',
+        'CThetaB',
         ]
 
+    # Target variable used in training.
+    targetVar = ['isNotContinuumEvent']
 
-    # Define the methods
-    methods = [
-        ('FastBDT', 'Plugin', 'H:V:CreateMVAPdfs:NbinsMVAPdf=100:NTrees=100:Shrinkage=0.10:RandRatio=0.5:NCutLevel=8:NTreeLayers=3'),
-        ('BDT', 'Plugin', 'H:V:CreateMVAPdfs:NTrees=500'),
-        ('HMatrix', 'Plugin', 'H:V:CreateMVAPdfs'),
-        ('Fisher', 'Plugin', 'H:V:CreateMVAPdfs'),
-        ('LD', 'Plugin', 'H:V:CreateMVAPdfs'),
-        ('Likelihood', 'Plugin', 'H:V:CreateMVAPdfs'),
-        ]
+    # MVAExpert
+    analysis_main.add_module('MVAExpert', listNames=['B0:ch1'], extraInfoName='FastBDT', identifier='MVAFastBDT_ch1.root')
 
-
-    # Create directory for TMVA teacher output
-    outDirForTMVA = 'training_ch1'
-    if not os.path.exists(outDirForTMVA):
-        os.makedirs(outDirForTMVA)
-
-
-    # TMVA training/testing
-    teacher = register_module('TMVAOnTheFlyTeacher')
-    teacher.param('prefix', 'B0_PhiKs_ch1_TMVA')
-    teacher.param('methods', methods)
-    teacher.param('variables', cvars)
-    teacher.param('target', 'isNotContinuumEvent')
-    teacher.param('listNames', ['B0:ch1'])
-    teacher.param('workingDirectory', outDirForTMVA)
-    analysis_main.add_module(teacher)
-
-
-
-if action == 'expert':
-    # run the expert mode
-    methods = ['FastBDT','BDT','HMatrix','Fisher','LD','Likelihood']
-
-    for method in methods:
-        expert = register_module('TMVAExpert')
-        expert.param('prefix', 'B0_PhiKs_ch1_TMVA')
-        expert.param('method', method)
-        expert.param('listNames', ['B0:ch1'])
-        expert.param('expertOutputName', method + '_Probability')
-        expert.param('workingDirectory', 'training_ch1')
-        analysis_main.add_module(expert)
-
-    # Network output
-    networkOutput = ['extraInfo({method}_Probability)'.format(method=method)
-                     for method in methods]
-    transformedNetworkOutputFBDT = \
-        ['transformedNetworkOutput(FastBDT_Probability,0.0,1.0)']
-    transformedNetworkOutputBDT = \
-        ['transformedNetworkOutput(BDT_Probability,0.0,1.0)']
-    transformedNetworkOutputHMatrix = \
-        ['transformedNetworkOutput(HMatrix_Probability,0.0,1.0)']
-    transformedNetworkOutputFisher = \
-        ['transformedNetworkOutput(Fisher_Probability,0.0,1.0)']
-    transformedNetworkOutputLD = \
-        ['transformedNetworkOutput(LD_Probability,0.0,1.0)']
-    transformedNetworkOutputLikelihood = \
-        ['transformedNetworkOutput(Likelihood_Probability,0.0,1.0)']
-
-
-    # define human readable aliases for CS variables
-
-    variables.addAlias('csv_FastBDT', 'transformedNetworkOutput(FastBDT_Probability,0.0,1.0)')
-    variables.addAlias('csv_BDT', 'transformedNetworkOutput(BDT_Probability,0.0,1.0)')
-    variables.addAlias('csv_HMatrix', 'transformedNetworkOutput(HMatrix_Probability,0.0,1.0)')
-    variables.addAlias('csv_Fisher', 'transformedNetworkOutput(Fisher_Probability,0.0,1.0)')
-    variables.addAlias('csv_LD', 'transformedNetworkOutput(LD_Probability,0.0,1.0)')
-    variables.addAlias('csv_Likelihood', 'transformedNetworkOutput(Likelihood_Probability,0.0,1.0)')
+    # Variables from MVAExpert.
+    #expertVars = ['extraInfo(FastBDT)', 'transformedNetworkOutput(FastBDT,0.,1.0)']
 
 
 
@@ -233,7 +158,8 @@ from variables import variables
 
 variables.addAlias('flLenSig', 'significanceOfDistance')
 variables.addAlias('CosTHel', 'decayAngle(0)')
-
+variables.addAlias('out_FastBDT',  'extraInfo(FastBDT)')
+variables.addAlias('csv_FastBDT',  'transformedNetworkOutput(FastBDT,0.,1.0)')
 
 
 # define Ntuple tools 
@@ -306,17 +232,10 @@ toolsBsigCh1 += ['CustomFloats[CosTHel]', 'B0:ch1 -> ^phi K_S0']
 toolsBsigCh1 += ['ContinuumSuppression', '^B0:ch1']
 toolsBsigCh1 += ['ContinuumSuppression[FS1]', '^B0:ch1']
 
-
 if action == 'expert':
-    toolsBsigCh1 += ['CustomFloats[' + ':'.join(networkOutput) + ']', '^B0:ch1']
-    # human readable variables
-    toolsBsigCh1 += ['CustomFloats[csv_FastBDT]', '^B0:ch1']
-    toolsBsigCh1 += ['CustomFloats[csv_BDT]', '^B0:ch1']
-    toolsBsigCh1 += ['CustomFloats[csv_HMatrix]', '^B0:ch1']
-    toolsBsigCh1 += ['CustomFloats[csv_Fisher]', '^B0:ch1']
-    toolsBsigCh1 += ['CustomFloats[csv_LD]', '^B0:ch1']
-    toolsBsigCh1 += ['CustomFloats[csv_Likelihood]', '^B0:ch1']
 
+    toolsBsigCh1 += ['CustomFloats[out_FastBDT]', '^B0:ch1']
+    toolsBsigCh1 += ['CustomFloats[csv_FastBDT]', '^B0:ch1']
 
 
 #toolsBsigCh1 += ['FlavorTagging', '^B0:ch1']
