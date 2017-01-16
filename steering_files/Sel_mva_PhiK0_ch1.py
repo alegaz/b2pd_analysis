@@ -25,7 +25,7 @@ outFile = str(sys.argv[4])
 
 # set the input files
 
-filenameSIG = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/SignalMC/Ch1/private/"
+filenameSIG = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/MC7/Ch1/BG0/"
 filenameSIG += stub
 filenameSIG += "*.root"
 filelistSIG = [filenameSIG];
@@ -42,7 +42,7 @@ filelistBBbar = [filenameBBbar];
 
 
 if sample == 'signal':
-    inputMdstList('MC5', filelistSIG)
+    inputMdstList('default', filelistSIG)
             
 elif sample == 'BBbar':
     inputMdstList('MC5', filelistBBbar)
@@ -225,7 +225,8 @@ toolsBsigCh1 += ['TagVertex', '^B0:ch1']
 toolsBsigCh1 += ['MCTagVertex', '^B0:ch1']
 toolsBsigCh1 += ['DeltaT', '^B0:ch1']
 toolsBsigCh1 += ['MCDeltaT', '^B0:ch1']
-toolsBsigCh1 += ['CustomFloats[isSignal:isContinuumEvent]', '^B0:ch1']
+toolsBsigCh1 += ['CustomFloats[isSignal]', '^B0:ch1 -> ^phi ^K_S0']
+toolsBsigCh1 += ['CustomFloats[isContinuumEvent]', '^B0:ch1']
 toolsBsigCh1 += ['CustomFloats[flLenSig]', 'B0:ch1 -> phi ^K_S0']
 toolsBsigCh1 += ['CustomFloats[CThetaB]', '^B0:ch1']
 toolsBsigCh1 += ['CustomFloats[CosTHel]', 'B0:ch1 -> ^phi K_S0']
