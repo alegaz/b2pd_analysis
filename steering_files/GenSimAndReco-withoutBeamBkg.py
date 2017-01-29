@@ -35,4 +35,4 @@ add_mdst_output(analysis_main, True,
 process(analysis_main)
 
 # print out the summary
-print statistics
+print (statistics)

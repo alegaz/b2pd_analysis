@@ -16,6 +16,7 @@ if len(sys.argv) != 5:
 import os
 from basf2 import *
 from modularAnalysis import *
+from flavorTagger import *
 
 action = str(sys.argv[1])
 sample = str(sys.argv[2])
@@ -90,6 +91,14 @@ matchMCTruth('B0:ch1')
 # get the rest of the event:
 buildRestOfEvent('B0:ch1')
 
+# flavor tagging
+flavorTagger(
+    mode='Expert',
+    particleList='B0:ch1',
+    combinerMethods=['TMVA-FBDT', 'FANN-MLP'],
+    workingDirectory="./JpsiMuMu_ftTrain/BGx1",
+    belleOrBelle2='Belle2')
+
 # get tag vertex ('breco' is the type of MC association)
 TagV('B0:ch1', 'breco')
 
@@ -143,13 +152,6 @@ if action == 'expert':
     # Variables from MVAExpert.
     #expertVars = ['extraInfo(FastBDT)', 'transformedNetworkOutput(FastBDT,0.,1.0)']
 
-
-
-# flavor tagging
-#FlavorTagger(
-#    mode='Expert',
-#    weightFiles='B2JpsiKs_mu',
-#    categories=['Electron', 'Muon', 'KinLepton', 'Kaon', 'SlowPion', 'FastPion', 'Lambda', 'FSC', 'MaximumP*', 'KaonPion'])
 
 
 # variable aliases
@@ -232,6 +234,7 @@ toolsBsigCh1 += ['CustomFloats[CThetaB]', '^B0:ch1']
 toolsBsigCh1 += ['CustomFloats[CosTHel]', 'B0:ch1 -> ^phi K_S0']
 toolsBsigCh1 += ['ContinuumSuppression', '^B0:ch1']
 toolsBsigCh1 += ['ContinuumSuppression[FS1]', '^B0:ch1']
+toolsBsigCh1 += ['FlavorTagging[TMVA-FBDT, FANN-MLP, qrCategories]', '^B0:ch1']
 
 if action == 'expert':
 
@@ -239,7 +242,6 @@ if action == 'expert':
     toolsBsigCh1 += ['CustomFloats[csv_FastBDT]', '^B0:ch1']
 
 
-#toolsBsigCh1 += ['FlavorTagging', '^B0:ch1']
 
 toolsRS = ['RecoStats', '^B0:ch1']
 
