@@ -35,7 +35,7 @@ outFile = str(sys.argv[4])
 
 # set the input files
 
-filenameSIG = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/SignalMC/Ch3/private/"
+filenameSIG = "/chai/sgt3/users/gaz/Belle2/PhiK0_rootfiles/MC7/Ch3/BG1/"
 filenameSIG += stub
 filenameSIG += "*.root"
 filelistSIG = [filenameSIG];
