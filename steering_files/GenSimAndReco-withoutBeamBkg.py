@@ -9,6 +9,14 @@
 #
 ######################################################
 
+import sys
+
+if len(sys.argv) != 2:
+    sys.exit('\n Usage: basf2 GenSimAndReco-withoutBeamBkg.py `output file name`.\n\n'
+    )
+
+outFile = str(sys.argv[1])
+
 from basf2 import *
 from modularAnalysis import generateY4S
 from modularAnalysis import analysis_main
@@ -19,7 +27,7 @@ from ROOT import Belle2
 import glob
 
 # generate signal MC
-generateY4S(1000, Belle2.FileSystem.findFile('../dec_files/B0_phi-K+K-_KS-pi+pi-.dec'))
+generateY4S(10000, Belle2.FileSystem.findFile('../dec_files/B0_phi-K+K-_KS-pi+pi-.dec'))
 
 # simulation
 add_simulation(analysis_main)      # WITHOUT beam background
@@ -28,8 +36,7 @@ add_simulation(analysis_main)      # WITHOUT beam background
 add_reconstruction(analysis_main)
 
 # dump in MDST format
-add_mdst_output(analysis_main, True,
-                'B0_Phi-KK_Ks-pi+pi-_gsim-BKGx0.root')
+add_mdst_output(analysis_main, True, outFile)
 
 # Process the events
 process(analysis_main)
